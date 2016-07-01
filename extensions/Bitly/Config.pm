@@ -18,13 +18,13 @@ sub REQUIRED_MODULES {
         {
             package => 'LWP',
             module  => 'LWP',
-            version => 5,
+            version => 6,
         },
         {
-            package => 'LWP',
-            module  => 'LWP',
-            version => 6,
-        }
+            package => 'LWP-Protocol-https',
+            module  => 'LWP::Protocol::https',
+            version => 0
+        },
     ];
 }
 
