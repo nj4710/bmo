@@ -71,6 +71,8 @@ requires 'XMLRPC::Lite';
 requires 'perl', '5.010001';
 requires 'version', '0.87';
 requires 'Safe', '2.30';
+requires 'mod_perl2', '==2.0.4';
+requires 'Apache2::SizeLimit', '==0.97';
 
 on configure => sub {
     requires 'ExtUtils::MakeMaker', '6.57_07';
