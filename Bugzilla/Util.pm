@@ -776,8 +776,10 @@ sub template_var {
     my %vars;
     # Note: If we suddenly start needing a lot of template_var variables,
     # they should move into their own template, not field-descs.
+    my $ignore = '';
     my $result = $template->process('global/field-descs.none.tmpl', 
-                                    { vars => \%vars, in_template_var => 1 });
+                                    { vars => \%vars, in_template_var => 1 },
+                                    \$ignore);
     # Bugzilla::Error can't be "use"d in Bugzilla::Util.
     if (!$result) {
         require Bugzilla::Error;
