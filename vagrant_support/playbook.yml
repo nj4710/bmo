@@ -1,0 +1,150 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: install epel-release
+      yum: name=epel-release state=present
+    - name: install common packages
+      yum: name={{item}} state=present
+      with_items:
+        - libselinux-python
+        - policycoreutils-python
+        - python-urllib3
+        - python-pyasn1
+        - python2-ndg_httpsclient
+        - pyOpenSSL
+        - htop
+
+    - name: permissive selinux
+      selinux: state=permissive policy=targeted
+
+    - name: disable selinux on reboot
+      selinux: state=disabled
+
+- hosts: db
+  become: true
+  tasks:
+    - name: add some extra repos
+      yum: name={{item}} state=present
+      with_items:
+        - https://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
+        - https://rhel6.iuscommunity.org/ius-release.rpm
+
+    - name: install mysql-server
+      yum: name=mysql-community-server state=present
+
+    - name: copy my.cnf
+      copy:
+        src: my.cnf
+        dest: /etc/my.cnf
+
+    - name: enable mysqld
+      service: name=mysqld enabled=yes
+
+    - name: restart mysqld
+      service: name=mysqld state=restarted
+
+    - name: check for bugs_bmo
+      shell: mysql -u root -e 'show databases' | grep bugs_bmo
+      register: bugs_bmo
+      ignore_errors: True
+
+    - name: fetch initial db
+      get_url:
+        url: https://dylan.hardison.net/pub/bmo-vagrant-initial-db.sql.gz
+        dest: /bmo-vagrant-initial-db.sql.gz
+      when: bugs_bmo|failed
+
+    - name: create bugs_bmo
+      shell: |-
+        mysqladmin -u root create bugs_bmo
+        mysql -u root -e 'GRANT ALL ON bugs_bmo.* TO bugs@"{{WEB_IP}}" IDENTIFIED BY "bugs"'
+        zcat /bmo-vagrant-initial-db.sql.gz | mysql -u root bugs_bmo
+      when: bugs_bmo|failed
+
+- hosts: web
+  become: true
+  tasks:
+    - name: install web-specific packages
+      yum: name={{item}} state=present
+      with_items:
+        - autoconf
+        - automake
+        - binutils
+        - bison
+        - byacc
+        - elfutils
+        - flex
+        - gcc
+        - gcc-c++
+        - gd
+        - gd-devel
+        - gettext
+        - git
+        - libtool
+        - make
+        - mod_perl
+        - mod_perl-devel
+        - openssl
+        - openssl-devel
+        - patch
+        - patchutils
+        - perl
+        - perl-core
+        - pkgconfig
+        - rpm-build
+
+    - name: fetch cpanm
+      get_url:
+        url: http://cpanmin.us
+        dest: /usr/local/bin/cpanm
+        mode: '0755'
+    - name: install more recent Apache2::SizeLimit
+      cpanm: name=Apache2::SizeLimit executable=/usr/local/bin/cpanm
+    - name: install vendor tarball
+      unarchive:
+        src: https://moz-devservices-bmocartons.s3.amazonaws.com/bmo/vendor.tar.gz
+        dest: /vagrant
+        remote_src: True
+        extra_opts: ["--strip-components", "1"]
+
+    - name: check bmo config
+      shell: test -f /vagrant/localconfig && test -f /vagrant/data/params && grep 11211 /vagrant/data/params
+      register: bmo_configured
+      ignore_errors: True
+
+
+    - name: memcached support
+      include: memcached.yml
+
+    - name: configure bmo
+      shell: |-
+        cd /vagrant
+        perl checksetup.pl
+        perl scripts/update_localconfig.pl db_name bugs_bmo
+        perl scripts/update_localconfig.pl db_pass bugs
+        perl scripts/update_localconfig.pl db_host "{{DB_IP}}"
+        perl scripts/update_params.pl password_complexity bmo
+        perl scripts/update_params.pl user_info_class GitHubAuth,CGI
+        perl scripts/update_params.pl user_verify_class GitHubAuth,DB
+        perl scripts/update_params.pl urlbase "http://{{SERVER_NAME}}/"
+        perl scripts/update_params.pl memcached_namespace 'bmo:'
+        perl scripts/update_params.pl memcached_servers '127.0.0.1:11211'
+        perl checksetup.pl
+        true
+      when: bmo_configured|failed
+
+    - name: configure httpd
+      template:
+        src: apache.j2
+        dest: /etc/httpd/conf.d/bugzilla.conf
+        mode: 0644
+
+    - name: enable httpd
+      service: name=httpd enabled=yes
+
+    - name: restart httpd
+      service: name=httpd state=restarted
+
+    - name: email stuff
+      include: email.yml
