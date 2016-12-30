@@ -104,7 +104,7 @@
       cpanm: name=Apache2::SizeLimit executable=/usr/local/bin/cpanm
 
     - name: check /opt/bmo
-      shell: test -d /opt/bmo
+      shell: test -d /opt/bmo && test -f /opt/bmo/local/lib/perl5/Plack.pm
       register: opt_bmo
       ignore_errors: true
 
@@ -115,14 +115,23 @@
         remote_src: true
       when: opt_bmo|failed
 
-    - name: add local as symlink to vendor local dir
-      file:
-        path: /vagrant/local
-        src:  /opt/bmo/local
-        state: link
-        force: true
+    - name: check /opt/bmo
+      shell: test -d /opt/bmo && test -f /opt/bmo/local/lib/perl5/Plack.pm
+      when: opt_bmo|failed
+
+    - name: add local symlink
+      file: path=/vagrant/local src=/opt/bmo/local state=link force=true
+
+    - name: make bmo data dir
+      file: path=/data state=directory group=apache mode=0755
+
+    - name: add data symlink
+      file: path=/vagrant/data src=/data state=link force=true
 
     - include: memcached.yml
+
+    - name: add vagrant to apache group
+      user: name=vagrant groups=apache append=yes
 
     - name: bmo bundle refresher script
       template:
@@ -136,6 +145,12 @@
         dest: /usr/local/bin/bmo-reconfigure
         mode: 0755
 
+    - name: bmo checksetup answers
+      template:
+        src: checksetup_answers.j2
+        dest: /home/vagrant/checksetup_answers.txt
+        mode: 0755
+
     - name: copy bmo config checker script
       copy:
         src: bmo-configured
@@ -147,24 +162,13 @@
       register: bmo_configured
       ignore_errors: true
 
-    - name: add vagrant to apache group
-      user:
-        name: vagrant
-        groups: apache
-        append: yes
-
     - name: configure bmo
-      shell: |-
-        cd /vagrant
-        perl checksetup.pl
-        bmo-reconfigure
-        perl checksetup.pl
+      shell: /usr/local/bin/bmo-reconfigure
       when: bmo_configured|failed
 
-    - name: fix owner
-      command: chown -Rc vagrant /vagrant
-      register: chown_status
-      changed_when: chown_status.stdout != ""
+    - name: check bmo config
+      shell: /usr/local/bin/bmo-configured
+      when: bmo_configured|failed
 
     - name: configure httpd
       template:

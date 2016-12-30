@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
   # For a complete reference, please see the online documentation at
   # https://docs.vagrantup.com.
 
-  config.vm.provision "ansible" do |ansible|
+  config.vm.provision "ansible", run: "always" do |ansible|
     ansible.playbook = "vagrant_support/playbook.yml"
     ansible.extra_vars = {
       WEB_IP:            WEB_IP,
@@ -46,7 +46,13 @@ Vagrant.configure("2") do |config|
     web.vm.network "private_network", ip: WEB_IP
 
     web.vm.synced_folder ".", "/vagrant", type: 'rsync',
-      rsync__exclude: ["local/", "vendor/", "vagrant_support/", "data/", "localconfig"]
+      owner: "root",
+      group: "apache",
+      rsync__args: ["--verbose", "--archive", "--delete", "-z", "--copy-links",
+                    "--exclude=local/",
+                    "--exclude=vagrant_support/",
+                    "--exclude=data/",
+                    "--exclude=localconfig"]
 
     web.vm.provider "virtualbox" do |v|
       v.memory = 2048

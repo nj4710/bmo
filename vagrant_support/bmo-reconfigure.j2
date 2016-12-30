@@ -1,28 +1,6 @@
 #!/bin/bash
 
 cd /vagrant
-set_param() {
-    perl scripts/update_params.pl "$1" "$2"
-}
-
-perl scripts/update_localconfig.pl db_name bugs_bmo
-perl scripts/update_localconfig.pl db_pass bugs
-perl scripts/update_localconfig.pl db_host "{{DB_IP}}"
-
-set_param password_complexity bmo
-set_param user_info_class GitHubAuth,CGI
-set_param user_verify_class GitHubAuth,DB
-set_param urlbase "http://{{SERVER_NAME}}/"
-set_param memcached_namespace 'bmo:'
-set_param memcached_servers '127.0.0.1:11211'
-set_param use_mailer_queue 1
-set_param useclassification 1
-set_param usebugaliases 1
-set_param upgrade_notification 0
-set_param usestatuswhiteboard 1
-set_param usetargetmilestone 1
-set_param webdotbase /usr/bin/dot
-set_param auth_delegation 1
-set_param insidergroup admin
-set_param defaultpriority --
-set_param defaultseverity normal
+rm localconfig data/params
+perl checksetup.pl /home/vagrant/checksetup_answers.txt
+perl checksetup.pl /home/vagrant/checksetup_answers.txt
