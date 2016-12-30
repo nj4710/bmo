@@ -47,7 +47,7 @@
     - name: check for bugs_bmo
       shell: mysql -u root -e 'show databases' | grep bugs_bmo
       register: bugs_bmo
-      ignore_errors: True
+      ignore_errors: true
 
     - name: fetch initial db
       get_url:
@@ -102,11 +102,18 @@
         mode: '0755'
     - name: install more recent Apache2::SizeLimit
       cpanm: name=Apache2::SizeLimit executable=/usr/local/bin/cpanm
+
+    - name: check /opt/bmo
+      shell: test -d /opt/bmo
+      register: opt_bmo
+      ignore_errors: true
+
     - name: install vendor tarball
       unarchive:
-        src: https://moz-devservices-bmocartons.s3.amazonaws.com/bmo/vendor.tar.gz
+        src: '{{VENDOR_BUNDLE_URL}}'
         dest: /opt
-        remote_src: True
+        remote_src: true
+      when: opt_bmo|failed
 
     - name: add local as symlink to vendor local dir
       file:
@@ -117,9 +124,13 @@
 
     - include: memcached.yml
 
+    - name: bmo bundle refresher script
+      template:
+        src: bmo-refresh-bundle.j2
+        dest: /usr/local/bin/bmo-refresh-bundle
+        mode: 0755
 
-
-    - name: copy bmo reconfiguration script
+    - name: bmo reconfiguration script
       template:
         src: bmo-reconfigure.j2
         dest: /usr/local/bin/bmo-reconfigure
@@ -134,7 +145,7 @@
     - name: check bmo config
       shell: /usr/local/bin/bmo-configured
       register: bmo_configured
-      ignore_errors: True
+      ignore_errors: true
 
     - name: add vagrant to apache group
       user:
