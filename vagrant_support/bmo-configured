@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+[[ -f /vagrant/localconfig ]] || exit 1
+[[ -f /vagrant/data/params ]] || exit 1
+grep "'urlbase' => ''" /vagrant/data/params && exit 1
+
+if stat -c %G /vagrant/data/params | grep vagrant; then
+    exit 1
+fi
+
+exit 0

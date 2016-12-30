@@ -17,7 +17,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "vagrant_support/playbook.yml"
-    ansible.sudo = true
     ansible.extra_vars = {
       WEB_IP: WEB_IP,
       DB_IP: DB_IP,
@@ -43,14 +42,14 @@ Vagrant.configure("2") do |config|
     web.vm.network "private_network", ip: WEB_IP
 
     web.vm.synced_folder ".", "/vagrant", type: 'rsync',
-      rsync__exclude: ["local/", "vendor/", "vagrant_support/"]
+      rsync__exclude: ["local/", "vendor/", "vagrant_support/", "data/", "localconfig"]
 
-    config.vm.provider "virtualbox" do |v|
+    web.vm.provider "virtualbox" do |v|
       v.memory = 2048
       v.cpus = 2
     end
 
-    config.vm.provider "vmware_fusion" do |v|
+    web.vm.provider "vmware_fusion" do |v|
       v.vmx["memsize"] = "2048"
       v.vmx["numvcpus"] = "2"
     end

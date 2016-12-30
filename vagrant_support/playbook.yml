@@ -104,35 +104,55 @@
     - name: install vendor tarball
       unarchive:
         src: https://moz-devservices-bmocartons.s3.amazonaws.com/bmo/vendor.tar.gz
-        dest: /vagrant
+        dest: /opt
         remote_src: True
-        extra_opts: ["--strip-components", "1"]
+
+    - name: add local as symlink to vendor local dir
+      file:
+        path: /vagrant/local
+        src:  /opt/bmo/local
+        state: link
+        force: true
+
+    - include: memcached.yml
+
+
+
+    - name: copy bmo reconfiguration script
+      template:
+        src: bmo-reconfigure.j2
+        dest: /usr/local/bin/bmo-reconfigure
+        mode: 0755
+
+    - name: copy bmo config checker script
+      copy:
+        src: bmo-configured
+        dest: /usr/local/bin/bmo-configured
+        mode: 0755
 
     - name: check bmo config
-      shell: test -f /vagrant/localconfig && test -f /vagrant/data/params && grep 11211 /vagrant/data/params
+      shell: /usr/local/bin/bmo-configured
       register: bmo_configured
       ignore_errors: True
 
-
-    - name: memcached support
-      include: memcached.yml
+    - name: add vagrant to apache group
+      user:
+        name: vagrant
+        groups: apache
+        append: yes
 
     - name: configure bmo
       shell: |-
         cd /vagrant
         perl checksetup.pl
-        perl scripts/update_localconfig.pl db_name bugs_bmo
-        perl scripts/update_localconfig.pl db_pass bugs
-        perl scripts/update_localconfig.pl db_host "{{DB_IP}}"
-        perl scripts/update_params.pl password_complexity bmo
-        perl scripts/update_params.pl user_info_class GitHubAuth,CGI
-        perl scripts/update_params.pl user_verify_class GitHubAuth,DB
-        perl scripts/update_params.pl urlbase "http://{{SERVER_NAME}}/"
-        perl scripts/update_params.pl memcached_namespace 'bmo:'
-        perl scripts/update_params.pl memcached_servers '127.0.0.1:11211'
+        bmo-reconfigure
         perl checksetup.pl
-        true
       when: bmo_configured|failed
+
+    - name: fix owner
+      command: chown -Rc vagrant /vagrant
+      register: chown_status
+      changed_when: chown_status.stdout != ""
 
     - name: configure httpd
       template:

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+cd /vagrant
+perl scripts/update_localconfig.pl db_name bugs_bmo
+perl scripts/update_localconfig.pl db_pass bugs
+perl scripts/update_localconfig.pl db_host "{{DB_IP}}"
+perl scripts/update_params.pl password_complexity bmo
+perl scripts/update_params.pl user_info_class GitHubAuth,CGI
+perl scripts/update_params.pl user_verify_class GitHubAuth,DB
+perl scripts/update_params.pl urlbase "http://{{SERVER_NAME}}/"
+perl scripts/update_params.pl memcached_namespace 'bmo:'
+perl scripts/update_params.pl memcached_servers '127.0.0.1:11211'
+perl scripts/update_params.pl use_mailer_queue 1

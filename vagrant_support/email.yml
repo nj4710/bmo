@@ -13,3 +13,9 @@
   copy:
     src: postfix/virtual
     dest: /etc/postfix/virtual
+
+- name: enable postfix
+  service: name=memcached enabled=yes
+
+- name: restart postfix
+  service: name=postfix state=restarted
