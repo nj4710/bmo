@@ -93,6 +93,7 @@
         - perl-core
         - pkgconfig
         - rpm-build
+        - graphviz
 
     - name: fetch cpanm
       get_url:
