@@ -28,7 +28,7 @@ Vagrant.configure("2") do |config|
       DB_HOSTNAME:       DB_HOSTNAME,
       VENDOR_BUNDLE_URL: VENDOR_BUNDLE_URL,
       # vagrant01!
-      bmo_password_hash: "XUi4OhMA75ix68Zk74LJl6BkQasFQxwX+zhYCDwM0I8f2pnHq1E{SHA-256}",
+      bmo_password_hash: "wSlwFjQUhbp97hgXPrboEdwFtSCjoBDF6k/UYAsIEXNCkxeUMYA{SHA-256}",
     }
   end
 
