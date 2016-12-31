@@ -2,8 +2,26 @@
 - hosts: all
   become: true
   tasks:
+    - name: check for non-link localtime
+      stat: path=/etc/localtime
+      register: localtime
+
+    - name: remove localtime
+      file:
+        path: /etc/localtime
+        state: absent
+      when: localtime.stat.islnk is defined and localtime.stat.islnk == False
+
+    - name: set timezone to same as production
+      file:
+        path: /etc/localtime
+        src: /usr/share/zoneinfo/America/Los_Angeles
+        force: true
+        state: link
+
     - name: install epel-release
       yum: name=epel-release state=present
+
     - name: install common packages
       yum: name={{item}} state=present
       with_items:
@@ -20,6 +38,22 @@
 
     - name: disable selinux on reboot
       selinux: state=disabled
+
+    - lineinfile:
+        dest: /etc/hosts
+        regexp: '{{WEB_HOSTNAME}}'
+        line: '{{WEB_IP}} {{WEB_HOSTNAME}}'
+        owner: root
+        group: root
+        mode: 0644
+
+    - lineinfile:
+        dest: /etc/hosts
+        regexp: '{{DB_HOSTNAME}}'
+        line: '{{DB_IP}} {{DB_HOSTNAME}}'
+        owner: root
+        group: root
+        mode: 0644
 
 - hosts: db
   become: true
@@ -60,6 +94,7 @@
         mysqladmin -u root create bugs_bmo
         mysql -u root -e 'GRANT ALL ON bugs_bmo.* TO bugs@"{{WEB_IP}}" IDENTIFIED BY "bugs"'
         zcat /bmo-vagrant-initial-db.sql.gz | mysql -u root bugs_bmo
+        mysql -u root -e 'use bugs_bmo; update profiles set cryptpassword = "{{bmo_password_hash}}"'
       when: bugs_bmo|failed
 
 - hosts: web
@@ -123,7 +158,7 @@
       file: path=/vagrant/local src=/opt/bmo/local state=link force=true
 
     - name: make bmo data dir
-      file: path=/data state=directory group=apache mode=0755
+      file: path=/data state=directory owner=root group=apache mode=0775
 
     - name: add data symlink
       file: path=/vagrant/data src=/data state=link force=true
@@ -169,6 +204,10 @@
     - name: check bmo config
       shell: /usr/local/bin/bmo-configured
       when: bmo_configured|failed
+
+    - include: cron.yml
+
+    - include: jobqueue.yml
 
     - name: configure httpd
       template:

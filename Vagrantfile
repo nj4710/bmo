@@ -4,7 +4,8 @@
 DB_IP  = '192.168.3.42'
 WEB_IP = '192.168.3.43'
 
-SERVER_NAME = WEB_IP
+DB_HOSTNAME  = 'bmo-db.vm'
+WEB_HOSTNAME = 'bmo-web.vm';
 
 # this is for centos 6 / el 6
 VENDOR_BUNDLE_URL = "https://moz-devservices-bmocartons.s3.amazonaws.com/bmo/vendor.tar.gz"
@@ -23,14 +24,17 @@ Vagrant.configure("2") do |config|
     ansible.extra_vars = {
       WEB_IP:            WEB_IP,
       DB_IP:             DB_IP,
-      SERVER_NAME:       SERVER_NAME,
+      WEB_HOSTNAME:      WEB_HOSTNAME,
+      DB_HOSTNAME:       DB_HOSTNAME,
       VENDOR_BUNDLE_URL: VENDOR_BUNDLE_URL,
+      # vagrant01!
+      bmo_password_hash: "XUi4OhMA75ix68Zk74LJl6BkQasFQxwX+zhYCDwM0I8f2pnHq1E{SHA-256}",
     }
   end
 
   config.vm.define "db" do |db|
     db.vm.box = 'centos/6'
-    db.vm.hostname = 'bmo-db.vm'
+    db.vm.hostname = DB_HOSTNAME
     db.vm.network "private_network", ip: DB_IP
     db.vm.synced_folder ".", "/vagrant", disabled: true
   end
@@ -39,19 +43,17 @@ Vagrant.configure("2") do |config|
     # Every Vagrant development environment requires a box. You can search for
     # boxes at https://atlas.hashicorp.com/search.
     web.vm.box = "centos/6"
-    web.vm.hostname = 'bmo-web.vm'
+    web.vm.hostname = WEB_HOSTNAME
 
     # Create a private network, which allows host-only access to the machine
     # using a specific IP.
     web.vm.network "private_network", ip: WEB_IP
 
     web.vm.synced_folder ".", "/vagrant", type: 'rsync',
-      owner: "root",
-      group: "apache",
       rsync__args: ["--verbose", "--archive", "--delete", "-z", "--copy-links",
                     "--exclude=local/",
-                    "--exclude=vagrant_support/",
                     "--exclude=data/",
+                    "--exclude=template_cache/",
                     "--exclude=localconfig"]
 
     web.vm.provider "virtualbox" do |v|
