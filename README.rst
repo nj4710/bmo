@@ -53,8 +53,7 @@ To test it, you'll want to add an entry to /etc/hosts
 for bmo-web.vm pointing to 192.168.3.43
 
 After that, you should be able to visit http://bmo-web.vm/ from your browser.
-You can login to any account using the password 'vagrant01!'
-
+You can login as vagrant@bmo-web.vm with the password "vagrant01!" (without quotes).
 
 Making Changes and Seeing them
 ==============================
