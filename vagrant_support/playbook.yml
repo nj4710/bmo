@@ -206,8 +206,8 @@
       when: bmo_configured|failed
 
     - include: cron.yml
-
     - include: jobqueue.yml
+    - include: push.yml
 
     - name: configure httpd
       template:
