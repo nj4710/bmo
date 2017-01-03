@@ -30,6 +30,8 @@ for file in /vagrant/data/params /vagrant/index.cgi; do
 done
 
 cd /vagrant
-sudo -u apache perl -T index.cgi &>/dev/null || exit 1
+sudo -u apache perl -T index.cgi &>/tmp/index.html || exit 1
+
+grep -q skin-Dusk /tmp/index.html && exit 1
 
 exit 0

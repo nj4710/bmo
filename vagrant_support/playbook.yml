@@ -2,23 +2,7 @@
 - hosts: all
   become: true
   tasks:
-    - name: check for non-link localtime
-      stat: path=/etc/localtime
-      register: localtime
-
-    - name: remove localtime
-      file:
-        path: /etc/localtime
-        state: absent
-      when: localtime.stat.islnk is defined and localtime.stat.islnk == False
-
-    - name: set timezone to same as production
-      file:
-        path: /etc/localtime
-        src: /usr/share/zoneinfo/America/Los_Angeles
-        force: true
-        state: link
-
+    - include: timezone.yml
     - name: install epel-release
       yum: name=epel-release state=present
 
@@ -83,18 +67,10 @@
       register: bugs_bmo
       ignore_errors: true
 
-    - name: fetch initial db
-      get_url:
-        url: https://dylan.hardison.net/pub/bmo-vagrant-initial-db.sql.gz
-        dest: /bmo-vagrant-initial-db.sql.gz
-      when: bugs_bmo|failed
-
     - name: create bugs_bmo
       shell: |-
         mysqladmin -u root create bugs_bmo
         mysql -u root -e 'GRANT ALL ON bugs_bmo.* TO bugs@"{{WEB_IP}}" IDENTIFIED BY "bugs"'
-        zcat /bmo-vagrant-initial-db.sql.gz | mysql -u root bugs_bmo
-        mysql -u root -e 'use bugs_bmo; update profiles set cryptpassword = "{{bmo_password_hash}}"'
       when: bugs_bmo|failed
 
 - hosts: web
@@ -208,18 +184,5 @@
     - include: cron.yml
     - include: jobqueue.yml
     - include: push.yml
-
-    - name: configure httpd
-      template:
-        src: apache.j2
-        dest: /etc/httpd/conf.d/bugzilla.conf
-        mode: 0644
-
-    - name: enable httpd
-      service: name=httpd enabled=yes
-
-    - name: restart httpd
-      service: name=httpd state=restarted
-
-    - name: email stuff
-      include: email.yml
+    - include: email.yml
+    - include: apache.yml
