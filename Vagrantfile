@@ -5,7 +5,7 @@ DB_IP  = '192.168.3.42'
 WEB_IP = '192.168.3.43'
 
 DB_HOSTNAME  = 'bmo-db.vm'
-WEB_HOSTNAME = 'bmo-web.vm';
+WEB_HOSTNAME = 'bmo-web.vm'
 
 # this is for centos 6 / el 6
 VENDOR_BUNDLE_URL = "https://moz-devservices-bmocartons.s3.amazonaws.com/bmo/vendor.tar.gz"
@@ -27,8 +27,6 @@ Vagrant.configure("2") do |config|
       WEB_HOSTNAME:      WEB_HOSTNAME,
       DB_HOSTNAME:       DB_HOSTNAME,
       VENDOR_BUNDLE_URL: VENDOR_BUNDLE_URL,
-      # vagrant01!
-      bmo_password_hash: "wSlwFjQUhbp97hgXPrboEdwFtSCjoBDF6k/UYAsIEXNCkxeUMYA{SHA-256}",
     }
   end
 
