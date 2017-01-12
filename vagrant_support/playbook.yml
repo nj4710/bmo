@@ -42,11 +42,23 @@
 - hosts: db
   become: true
   tasks:
+    - name: fetch ius-release.rpm
+      get_url:
+        url: https://rhel6.iuscommunity.org/ius-release.rpm
+        dest: /tmp/ius-release.rpm
+        mode: 0600
+
+    - name: fetch mysql rpm
+      get_url:
+        url: https://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
+        dest: /tmp/mysql-community-release-el6-5.noarch.rpm
+        mode: 0600
+
     - name: add some extra repos
       yum: name={{item}} state=present
       with_items:
-        - https://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
-        - https://rhel6.iuscommunity.org/ius-release.rpm
+        - /tmp/ius-release.rpm
+        - /tmp/mysql-community-release-el6-5.noarch.rpm
 
     - name: install mysql-server
       yum: name=mysql-community-server state=present
