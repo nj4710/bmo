@@ -44,13 +44,14 @@
   tasks:
     - name: fetch ius-release.rpm
       get_url:
-        url: https://rhel6.iuscommunity.org/ius-release.rpm
+        url: https://moz-devservices-bmocartons.s3.amazonaws.com/third-party/ius-release.rpm
         dest: /tmp/ius-release.rpm
         mode: 0600
 
     - name: fetch mysql rpm
       get_url:
-        url: https://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
+        url: 
+        url: https://moz-devservices-bmocartons.s3.amazonaws.com/third-party/mysql-community-release-el6-5.noarch.rpm
         dest: /tmp/mysql-community-release-el6-5.noarch.rpm
         mode: 0600
 
